@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Add Subtitle Server</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            padding: 40px;
+        }
+        .container { max-width: 600px; margin: 0 auto; }
+        h1 { margin-bottom: 30px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 6px;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            font-size: 14px;
+        }
+        input::placeholder { color: rgba(255,255,255,0.5); }
+        select option { background: #333; color: #fff; }
+        small { color: rgba(255,255,255,0.7); font-size: 12px; }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover { background: #45a049; }
+        .info { background: rgba(255,255,255,0.1); padding: 15px; border-radius: 6px; margin-top: 20px; }
+        .server-list { margin-top: 30px; }
+        .server-item {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .server-item button {
+            background: #f44336;
+            padding: 8px 16px;
+        }
+        .server-item button:hover { background: #da190b; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎬 Subtitle Server Configuration</h1>
+        <p style="margin-bottom: 20px;">Add subtitle servers to automatically fetch subtitles in your preferred language</p>
+
+        <form id="serverForm">
+            <div class="form-group">
+                <label>Server Name *</label>
+                <input type="text" id="name" placeholder="OpenSubtitles" required>
+            </div>
+
+            <div class="form-group">
+                <label>Server Type *</label>
+                <select id="serverType" required>
+                    <option value="">Select server type...</option>
+                    <option value="opensubtitles">OpenSubtitles API</option>
+                    <option value="subscene">Subscene</option>
+                    <option value="custom">Custom API</option>
+                    <option value="local">Local Subtitle Files</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="apiUrlGroup" style="display:none;">
+                <label>API URL</label>
+                <input type="url" id="apiUrl" placeholder="https://api.opensubtitles.com/api/v1">
+                <small>Base URL for the subtitle API</small>
+            </div>
+
+            <div class="form-group" id="apiKeyGroup" style="display:none;">
+                <label>API Key</label>
+                <input type="text" id="apiKey" placeholder="Your API key">
+                <small>Required for OpenSubtitles and other services</small>
+            </div>
+
+            <div class="form-group">
+                <label>Preferred Languages *</label>
+                <select id="languages" multiple size="5" required>
+                    <option value="en">English</option>
+                    <option value="ar">Arabic</option>
+                    <option value="es">Spanish</option>
+                    <option value="fr">French</option>
+                    <option value="de">German</option>
+                    <option value="it">Italian</option>
+                    <option value="pt">Portuguese</option>
+                    <option value="ru">Russian</option>
+                    <option value="zh">Chinese</option>
+                    <option value="ja">Japanese</option>
+                    <option value="ko">Korean</option>
+                    <option value="hi">Hindi</option>
+                    <option value="tr">Turkish</option>
+                </select>
+                <small>Hold Ctrl/Cmd to select multiple languages</small>
+            </div>
+
+            <div class="form-group">
+                <label>Auto-Load Subtitles</label>
+                <select id="autoLoad">
+                    <option value="true">Yes - Automatically search and load</option>
+                    <option value="false">No - Manual selection only</option>
+                </select>
+            </div>
+
+            <button type="submit">Add Subtitle Server</button>
+        </form>
+
+        <div id="result" class="info" style="display:none;"></div>
+
+        <div class="server-list">
+            <h2 style="margin-bottom: 15px;">📚 Configured Subtitle Servers</h2>
+            <div id="serversList"></div>
+        </div>
+
+        <div class="info" style="margin-top: 30px;">
+            <h3>📖 Supported Subtitle Services:</h3>
+            <ul style="margin-top: 10px; line-height: 2;">
+                <li><strong>OpenSubtitles</strong> - Largest subtitle database (requires free API key)</li>
+                <li><strong>Subscene</strong> - Popular subtitle website</li>
+                <li><strong>Custom API</strong> - Your own subtitle server</li>
+                <li><strong>Local Files</strong> - Upload subtitle files manually</li>
+            </ul>
+            <br>
+            <h3>🔑 Getting OpenSubtitles API Key:</h3>
+            <p style="margin-top: 10px; line-height: 1.6;">
+                1. Register at <a href="https://www.opensubtitles.com" target="_blank" style="color: #4CAF50;">opensubtitles.com</a><br>
+                2. Go to your profile → API → Generate API key<br>
+                3. Copy the API key and paste it above
+            </p>
+        </div>
+    </div>
+
+    <script src="js/storage.js"></script>
+    <script>
+        // Show/hide fields based on server type
+        document.getElementById('serverType').addEventListener('change', function() {
+            var serverType = this.value;
+            var apiUrlGroup = document.getElementById('apiUrlGroup');
+            var apiKeyGroup = document.getElementById('apiKeyGroup');
+
+            if (serverType === 'opensubtitles' || serverType === 'custom') {
+                apiUrlGroup.style.display = 'block';
+                apiKeyGroup.style.display = 'block';
+
+                if (serverType === 'opensubtitles') {
+                    document.getElementById('apiUrl').value = 'https://api.opensubtitles.com/api/v1';
+                }
+            } else {
+                apiUrlGroup.style.display = 'none';
+                apiKeyGroup.style.display = 'none';
+            }
+        });
+
+        // Load existing servers
+        function loadServers() {
+            var servers = IPTVStorage.getSubtitleServers();
+            var container = document.getElementById('serversList');
+
+            if (servers.length === 0) {
+                container.innerHTML = '<p style="color: rgba(255,255,255,0.5);">No subtitle servers configured yet</p>';
+                return;
+            }
+
+            container.innerHTML = servers.map(function(server) {
+                return '<div class="server-item">' +
+                       '<div>' +
+                       '<strong>' + escapeHtml(server.name) + '</strong><br>' +
+                       '<small>Type: ' + server.serverType + ' | Languages: ' + server.languages.join(', ') + '</small>' +
+                       '</div>' +
+                       '<button onclick="deleteServer(\'' + server.id + '\')">Delete</button>' +
+                       '</div>';
+            }).join('');
+        }
+
+        // Delete server
+        window.deleteServer = function(id) {
+            if (confirm('Delete this subtitle server?')) {
+                IPTVStorage.deleteSubtitleServer(id);
+                loadServers();
+            }
+        };
+
+        // Add server
+        document.getElementById('serverForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            var name = document.getElementById('name').value;
+            var serverType = document.getElementById('serverType').value;
+            var apiUrl = document.getElementById('apiUrl').value;
+            var apiKey = document.getElementById('apiKey').value;
+            var languagesSelect = document.getElementById('languages');
+            var languages = Array.from(languagesSelect.selectedOptions).map(opt => opt.value);
+            var autoLoad = document.getElementById('autoLoad').value === 'true';
+
+            if (languages.length === 0) {
+                alert('Please select at least one language');
+                return;
+            }
+
+            var serverInfo = {
+                name: name,
+                serverType: serverType,
+                apiUrl: apiUrl,
+                apiKey: apiKey,
+                languages: languages,
+                autoLoad: autoLoad
+            };
+
+            try {
+                IPTVStorage.addSubtitleServer(serverInfo);
+
+                var result = document.getElementById('result');
+                result.style.display = 'block';
+                result.innerHTML = '✅ Subtitle server added successfully!';
+
+                // Reset form
+                document.getElementById('serverForm').reset();
+                document.getElementById('apiUrlGroup').style.display = 'none';
+                document.getElementById('apiKeyGroup').style.display = 'none';
+
+                loadServers();
+
+                setTimeout(function() {
+                    result.style.display = 'none';
+                }, 3000);
+            } catch (error) {
+                var result = document.getElementById('result');
+                result.style.display = 'block';
+                result.innerHTML = '❌ Error: ' + error.message;
+            }
+        });
+
+        function escapeHtml(text) {
+            var div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Load servers on page load
+        loadServers();
+    </script>
+</body>
+</html>

@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Add IP Server</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            padding: 40px;
+        }
+        .container { max-width: 600px; margin: 0 auto; }
+        h1 { margin-bottom: 30px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 6px;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            font-size: 14px;
+        }
+        input::placeholder { color: rgba(255,255,255,0.5); }
+        small { color: rgba(255,255,255,0.7); font-size: 12px; }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover { background: #45a049; }
+        .info { background: rgba(255,255,255,0.1); padding: 15px; border-radius: 6px; margin-top: 20px; }
+        .server-preview {
+            background: rgba(0,0,0,0.3);
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            font-family: monospace;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🖥️ Add IP Server</h1>
+        <p style="margin-bottom: 20px;">Connect to an IPTV server using IP address and credentials</p>
+
+        <form id="serverForm">
+            <div class="form-group">
+                <label>Server Name *</label>
+                <input type="text" id="name" placeholder="My IPTV Server" required>
+            </div>
+
+            <div class="form-group">
+                <label>Server IP Address *</label>
+                <input type="text" id="ip" placeholder="192.168.1.100 or domain.com" required>
+                <small>Enter the server's IP address or domain name</small>
+            </div>
+
+            <div class="form-group">
+                <label>Port *</label>
+                <input type="number" id="port" placeholder="8000" value="8000" min="1" max="65535" required>
+                <small>Default ports: 8000, 8080, 25461</small>
+            </div>
+
+            <div class="form-group">
+                <label>Protocol</label>
+                <select id="protocol">
+                    <option value="http">HTTP</option>
+                    <option value="https">HTTPS</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Username *</label>
+                <input type="text" id="username" placeholder="username" required>
+            </div>
+
+            <div class="form-group">
+                <label>Password *</label>
+                <input type="password" id="password" placeholder="password" required>
+            </div>
+
+            <div class="form-group">
+                <label>API Path (Optional)</label>
+                <input type="text" id="apiPath" placeholder="/get.php or /player_api.php">
+                <small>Leave empty for standard Xtream Codes API</small>
+            </div>
+
+            <div class="server-preview">
+                <strong>Server URL Preview:</strong><br>
+                <span id="urlPreview">http://[ip]:[port]/player_api.php?username=[user]&password=[pass]</span>
+            </div>
+
+            <button type="submit">Connect & Load Channels</button>
+        </form>
+
+        <div id="result" class="info" style="display:none;"></div>
+
+        <div class="info" style="margin-top: 30px;">
+            <h3>📝 Supported Server Types:</h3>
+            <ul style="margin-top: 10px; line-height: 1.8;">
+                <li><strong>Xtream Codes API</strong> - Most common IPTV panel</li>
+                <li><strong>Custom IPTV Servers</strong> - With M3U endpoint</li>
+                <li><strong>IP-based streaming servers</strong></li>
+            </ul>
+            <br>
+            <h3>🔗 URL Formats:</h3>
+            <p style="margin-top: 10px; font-family: monospace; font-size: 12px;">
+                Xtream: http://ip:port/player_api.php?username=XXX&password=YYY<br>
+                M3U: http://ip:port/get.php?username=XXX&password=YYY&type=m3u_plus
+            </p>
+        </div>
+    </div>
+
+    <script src="js/storage.js"></script>
+    <script src="js/ip-server-loader.js"></script>
+    <script>
+        // Update URL preview on input
+        ['ip', 'port', 'protocol', 'username', 'password', 'apiPath'].forEach(function(field) {
+            var elem = document.getElementById(field);
+            if (elem) {
+                elem.addEventListener('input', updateUrlPreview);
+                elem.addEventListener('change', updateUrlPreview);
+            }
+        });
+
+        function updateUrlPreview() {
+            var protocol = document.getElementById('protocol').value || 'http';
+            var ip = document.getElementById('ip').value || '[ip]';
+            var port = document.getElementById('port').value || '8000';
+            var username = document.getElementById('username').value || '[user]';
+            var password = document.getElementById('password').value || '[pass]';
+            var apiPath = document.getElementById('apiPath').value || '/player_api.php';
+
+            // Ensure apiPath starts with /
+            if (apiPath && !apiPath.startsWith('/')) {
+                apiPath = '/' + apiPath;
+            }
+
+            var url = protocol + '://' + ip + ':' + port + apiPath +
+                     '?username=' + username + '&password=' + password;
+
+            document.getElementById('urlPreview').textContent = url;
+        }
+
+        document.getElementById('serverForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            var name = document.getElementById('name').value;
+            var protocol = document.getElementById('protocol').value;
+            var ip = document.getElementById('ip').value;
+            var port = document.getElementById('port').value;
+            var username = document.getElementById('username').value;
+            var password = document.getElementById('password').value;
+            var apiPath = document.getElementById('apiPath').value || '/player_api.php';
+
+            if (apiPath && !apiPath.startsWith('/')) {
+                apiPath = '/' + apiPath;
+            }
+
+            var result = document.getElementById('result');
+            result.style.display = 'block';
+            result.innerHTML = '⏳ Connecting to server and loading channels...';
+
+            var serverInfo = {
+                name: name,
+                protocol: protocol,
+                ip: ip,
+                port: port,
+                username: username,
+                password: password,
+                apiPath: apiPath
+            };
+
+            try {
+                var channels = await IPServerLoader.loadChannels(serverInfo);
+
+                if (channels.length === 0) {
+                    result.innerHTML = '❌ No channels found on server';
+                    return;
+                }
+
+                // Save server info and channels
+                var server = IPTVStorage.addIPServer(serverInfo);
+                IPTVStorage.addChannels(server.id, channels);
+
+                result.innerHTML = '✅ Success!<br>' +
+                                 'Connected to: ' + name + '<br>' +
+                                 'Loaded ' + channels.length + ' channels<br><br>' +
+                                 '<a href="channels.html" style="color:#4CAF50">View Channels →</a>';
+
+                // Reset form
+                document.getElementById('serverForm').reset();
+                document.getElementById('port').value = '8000';
+                document.getElementById('protocol').value = 'http';
+                updateUrlPreview();
+            } catch (error) {
+                result.innerHTML = '❌ Error: ' + error.message + '<br><br>' +
+                                 '<small>Please check your server details and try again.</small>';
+            }
+        });
+
+        // Initialize preview
+        updateUrlPreview();
+    </script>
+</body>
+</html>

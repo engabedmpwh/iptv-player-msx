@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>IPTV Channels</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+            padding: 20px;
+        }
+        h1 { margin-bottom: 20px; color: #667eea; }
+        .search { margin-bottom: 20px; }
+        .search input {
+            width: 100%;
+            padding: 12px;
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 6px;
+            color: #fff;
+            font-size: 16px;
+        }
+        .channels { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; }
+        .channel {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            border: 2px solid transparent;
+        }
+        .channel:hover {
+            transform: translateY(-3px);
+            border-color: #667eea;
+        }
+        .channel img {
+            width: 60px;
+            height: 60px;
+            object-fit: contain;
+            margin-right: 10px;
+            float: left;
+        }
+        .channel-name { font-weight: bold; font-size: 16px; }
+        .channel-cat { font-size: 12px; color: #999; margin-top: 5px; }
+        .fav-btn {
+            background: none;
+            border: none;
+            color: #ffd700;
+            cursor: pointer;
+            font-size: 20px;
+            float: right;
+        }
+        .empty { text-align: center; padding: 60px; color: #666; }
+    </style>
+</head>
+<body>
+    <h1>📺 Live TV Channels</h1>
+    <div class="search">
+        <input type="text" id="searchInput" placeholder="🔍 Search channels...">
+    </div>
+    <div id="channels" class="channels"></div>
+
+    <script src="js/storage.js"></script>
+    <script>
+        function loadChannels(searchQuery) {
+            const channels = searchQuery ?
+                IPTVStorage.searchChannels(searchQuery) :
+                IPTVStorage.getChannels();
+
+            const container = document.getElementById('channels');
+
+            if (channels.length === 0) {
+                container.innerHTML = '<div class="empty">📭 No channels found<br><small>Add a playlist first</small></div>';
+                return;
+            }
+
+            container.innerHTML = channels.map(ch => `
+                <div class="channel" onclick="playChannel('${ch.url}', '${ch.name}')">
+                    <button class="fav-btn" onclick="event.stopPropagation(); toggleFav('${ch.id}')">
+                        ${IPTVStorage.isFavorite(ch.id) ? '★' : '☆'}
+                    </button>
+                    ${ch.logo ? `<img src="${ch.logo}" onerror="this.style.display='none'">` : ''}
+                    <div class="channel-name">${escapeHtml(ch.name)}</div>
+                    <div class="channel-cat">${escapeHtml(ch.category)}</div>
+                </div>
+            `).join('');
+        }
+
+        function playChannel(url, name) {
+            window.open(url, '_blank');
+        }
+
+        function toggleFav(id) {
+            if (IPTVStorage.isFavorite(id)) {
+                IPTVStorage.removeFavorite(id);
+            } else {
+                IPTVStorage.addFavorite(id);
+            }
+            loadChannels();
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            loadChannels(e.target.value);
+        });
+
+        loadChannels();
+    </script>
+</body>
+</html>

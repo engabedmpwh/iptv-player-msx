@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Search Subtitles</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+            padding: 20px;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1 { margin-bottom: 20px; color: #667eea; }
+
+        .search-form {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr auto;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        input, select, button {
+            padding: 12px;
+            border: 1px solid #444;
+            border-radius: 6px;
+            background: #1a1a1a;
+            color: #fff;
+            font-size: 14px;
+        }
+        button {
+            background: #667eea;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover { background: #5568d3; }
+
+        .results {
+            display: grid;
+            gap: 15px;
+        }
+        .subtitle-item {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 8px;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 15px;
+            align-items: center;
+        }
+        .subtitle-info h3 {
+            margin-bottom: 8px;
+            color: #667eea;
+        }
+        .subtitle-meta {
+            font-size: 12px;
+            color: #999;
+            margin-top: 5px;
+        }
+        .subtitle-actions button {
+            background: #4CAF50;
+            padding: 10px 20px;
+            margin-left: 5px;
+        }
+        .subtitle-actions button:hover { background: #45a049; }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+        .empty {
+            text-align: center;
+            padding: 60px;
+            color: #666;
+        }
+        .error {
+            background: rgba(244, 67, 54, 0.2);
+            border: 1px solid #f44336;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .lang-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            background: #667eea;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .format-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            background: #4CAF50;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-left: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Search Subtitles</h1>
+
+        <div class="search-form">
+            <div class="form-row">
+                <input type="text" id="searchQuery" placeholder="Enter movie/show name or IMDB ID..." required>
+                <select id="languageSelect">
+                    <option value="en">English</option>
+                    <option value="ar">Arabic</option>
+                    <option value="es">Spanish</option>
+                    <option value="fr">French</option>
+                    <option value="de">German</option>
+                    <option value="it">Italian</option>
+                    <option value="pt">Portuguese</option>
+                    <option value="ru">Russian</option>
+                    <option value="zh">Chinese</option>
+                    <option value="ja">Japanese</option>
+                    <option value="ko">Korean</option>
+                    <option value="hi">Hindi</option>
+                    <option value="tr">Turkish</option>
+                </select>
+                <button onclick="searchSubtitles()">Search</button>
+            </div>
+            <small style="color: #999;">Search for subtitles across all configured servers</small>
+        </div>
+
+        <div id="errorMessage" class="error" style="display:none;"></div>
+        <div id="loadingMessage" class="loading" style="display:none;">
+            ⏳ Searching for subtitles...
+        </div>
+        <div id="results" class="results"></div>
+    </div>
+
+    <script src="js/storage.js"></script>
+    <script src="js/subtitle-manager.js"></script>
+    <script>
+        var currentChannelId = null;
+
+        // Get channel ID from URL if present
+        var urlParams = new URLSearchParams(window.location.search);
+        currentChannelId = urlParams.get('channelId');
+        var channelName = urlParams.get('channelName');
+
+        if (channelName) {
+            document.getElementById('searchQuery').value = decodeURIComponent(channelName);
+        }
+
+        async function searchSubtitles() {
+            var query = document.getElementById('searchQuery').value.trim();
+            var language = document.getElementById('languageSelect').value;
+
+            if (!query) {
+                alert('Please enter a search query');
+                return;
+            }
+
+            var errorDiv = document.getElementById('errorMessage');
+            var loadingDiv = document.getElementById('loadingMessage');
+            var resultsDiv = document.getElementById('results');
+
+            errorDiv.style.display = 'none';
+            loadingDiv.style.display = 'block';
+            resultsDiv.innerHTML = '';
+
+            try {
+                var results = await SubtitleManager.searchSubtitles(query, language);
+
+                loadingDiv.style.display = 'none';
+
+                if (results.length === 0) {
+                    resultsDiv.innerHTML = '<div class="empty">😔 No subtitles found<br><small>Try a different search term or language</small></div>';
+                    return;
+                }
+
+                resultsDiv.innerHTML = results.map(function(sub, index) {
+                    return '<div class="subtitle-item">' +
+                           '<div class="subtitle-info">' +
+                           '<h3>' + escapeHtml(sub.name) + '</h3>' +
+                           '<span class="lang-badge">' + sub.language + '</span>' +
+                           '<span class="format-badge">' + sub.format + '</span>' +
+                           '<div class="subtitle-meta">' +
+                           'Server: ' + sub.serverType +
+                           (sub.downloads ? ' | Downloads: ' + sub.downloads : '') +
+                           '</div>' +
+                           '</div>' +
+                           '<div class="subtitle-actions">' +
+                           '<button onclick="downloadAndSave(' + index + ')">Download & Save</button>' +
+                           '</div>' +
+                           '</div>';
+                }).join('');
+
+                // Store results for download
+                window.searchResults = results;
+
+            } catch (error) {
+                loadingDiv.style.display = 'none';
+                errorDiv.style.display = 'block';
+                errorDiv.textContent = '❌ Error: ' + error.message;
+            }
+        }
+
+        async function downloadAndSave(index) {
+            var subtitle = window.searchResults[index];
+
+            if (!subtitle) {
+                alert('Subtitle not found');
+                return;
+            }
+
+            var button = event.target;
+            button.textContent = 'Downloading...';
+            button.disabled = true;
+
+            try {
+                var content = await SubtitleManager.downloadSubtitle(subtitle);
+
+                // Convert to VTT if needed
+                if (subtitle.format === 'srt') {
+                    content = SubtitleManager.convertSRTtoVTT(content);
+                }
+
+                // Save to storage
+                if (currentChannelId) {
+                    SubtitleManager.saveSubtitle(currentChannelId, subtitle.language, content, 'vtt');
+                    alert('✅ Subtitle downloaded and saved!\n\nYou can now use it with your channel.');
+                } else {
+                    // Save to local subtitles
+                    IPTVStorage.addLocalSubtitle({
+                        name: subtitle.name,
+                        language: subtitle.language,
+                        content: content,
+                        format: 'vtt'
+                    });
+                    alert('✅ Subtitle downloaded and saved to local library!');
+                }
+
+                button.textContent = '✓ Saved';
+                button.style.background = '#4CAF50';
+
+            } catch (error) {
+                button.textContent = 'Download & Save';
+                button.disabled = false;
+                alert('❌ Error downloading subtitle: ' + error.message);
+            }
+        }
+
+        function escapeHtml(text) {
+            var div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Allow Enter key to search
+        document.getElementById('searchQuery').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchSubtitles();
+            }
+        });
+
+        // Load available languages from configured servers
+        window.addEventListener('load', function() {
+            var languages = SubtitleManager.getAvailableLanguages();
+            if (languages.length > 0) {
+                // Update language select if needed
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,135 @@
+{
+  "name": "IPTV Player",
+  "version": "1.0.0",
+  "parameter": "menu:channels",
+  "dictionary": "https://msx.benzac.de/locale/en.json",
+  "menu": [
+    {
+      "type": "pages",
+      "id": "channels",
+      "icon": "live-tv",
+      "label": "Live TV",
+      "pages": [
+        {
+          "items": [
+            {
+              "type": "default",
+              "layout": "0,0,2,2",
+              "icon": "live-tv",
+              "label": "All Channels",
+              "action": "content:plugins/channels.html"
+            },
+            {
+              "type": "default",
+              "layout": "2,0,2,2",
+              "icon": "star",
+              "label": "Favorites",
+              "action": "content:plugins/favorites.html"
+            },
+            {
+              "type": "default",
+              "layout": "0,2,2,2",
+              "icon": "category",
+              "label": "Categories",
+              "action": "content:plugins/categories.html"
+            },
+            {
+              "type": "default",
+              "layout": "2,2,2,2",
+              "icon": "search",
+              "label": "Search",
+              "action": "content:plugins/search.html"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "pages",
+      "id": "playlists",
+      "icon": "playlist-play",
+      "label": "Playlists",
+      "pages": [
+        {
+          "items": [
+            {
+              "type": "default",
+              "layout": "0,0,2,2",
+              "icon": "add",
+              "label": "Add M3U Playlist",
+              "action": "content:plugins/add-playlist.html"
+            },
+            {
+              "type": "default",
+              "layout": "2,0,2,2",
+              "icon": "dns",
+              "label": "Add IP Server",
+              "action": "content:plugins/add-ip-server.html"
+            },
+            {
+              "type": "default",
+              "layout": "0,2,4,2",
+              "icon": "list",
+              "label": "Manage Playlists",
+              "action": "content:plugins/playlists.html"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "pages",
+      "id": "subtitles",
+      "icon": "subtitles",
+      "label": "Subtitles",
+      "pages": [
+        {
+          "items": [
+            {
+              "type": "default",
+              "layout": "0,0,2,2",
+              "icon": "search",
+              "label": "Search Subtitles",
+              "action": "content:plugins/subtitle-search.html"
+            },
+            {
+              "type": "default",
+              "layout": "2,0,2,2",
+              "icon": "dns",
+              "label": "Add Subtitle Server",
+              "action": "content:plugins/add-subtitle-server.html"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "pages",
+      "id": "settings",
+      "icon": "settings",
+      "label": "Settings",
+      "pages": [
+        {
+          "items": [
+            {
+              "type": "default",
+              "layout": "0,0,4,2",
+              "icon": "info",
+              "label": "About",
+              "badge": "v1.0.0",
+              "action": "panel:about"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "panels": [
+    {
+      "id": "about",
+      "type": "text",
+      "headline": "IPTV Player for MSX",
+      "text": "Version: 1.0.0\n\nA feature-rich IPTV player for Media Station X.\n\nFeatures:\n• M3U/M3U8 playlist support\n• IP server support (Xtream Codes)\n• Subtitle support (multi-language)\n• Live TV streaming\n• Channel categories\n• Favorites management\n• Search functionality\n• EPG support (if provided)\n• HLS & MPEG-TS streaming\n\nSupported Formats:\n• M3U playlists (local & remote)\n• Xtream Codes API servers\n• HTTP/HTTPS streams\n• HLS (m3u8) streams\n• MPEG-TS streams\n• SRT/VTT subtitles\n\nHow to Use:\n1. Add content sources:\n   - 'Playlists' → 'Add M3U Playlist'\n   - 'Playlists' → 'Add IP Server'\n2. Configure subtitles (optional):\n   - 'Subtitles' → 'Add Subtitle Server'\n3. Browse channels in 'Live TV'\n4. Click a channel to start watching\n5. Search for subtitles in your language\n\nFor best experience, use playlists with valid stream URLs.\n\nDeveloped for Media Station X\nhttps://msx.benzac.de"
+    }
+  ]
+}
